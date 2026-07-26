@@ -134,8 +134,12 @@ function tokenize(src: string): Token[] {
 
 function decodeString(input: string): string {
 
-    if (!(input.length > 1 || (input.startsWith('"') || input.endsWith('"')))) {
+    if (!(input.length > 1 || (input.startsWith('"')))) {
         return "ERR"
+    }
+
+    if (!input.endsWith('"')) {
+        return "unterminated"
     }
 
     let i: number = 1;
@@ -149,7 +153,7 @@ function decodeString(input: string): string {
             }
             const next = input[i + 1];
 
-            if (next === '"' || next === "\\"
+            if (next === '"' || next === "\\" || next === "/"
             ) {
                 response.push(next);
                 i += 2;
@@ -164,6 +168,12 @@ function decodeString(input: string): string {
 
             if (next === 't') {
                 response.push("\t");
+                i += 2;
+                continue;
+            }
+
+            if (next === 'b') {
+                response.push('\b');
                 i += 2;
                 continue;
             }
