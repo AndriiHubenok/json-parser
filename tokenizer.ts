@@ -106,28 +106,111 @@ function tokenize(src: string): Token[] {
     return tokens;
 }
 
-const out: string[] = [];
+// const out: string[] = [];
+//
+// for (const line of lines) {
+//     if (line === "") continue;
+//
+//     try {
+//         for (const [k, v] of tokenize(line)) {
+//             if (k === "EOF") {
+//                 out.push(k);
+//             } else {
+//                 out.push(`${k} ${v}`);
+//             }
+//         }
+//     } catch (e) {
+//         if (e instanceof Error) {
+//             out.push(`ERR ${e.message}`);
+//         } else {
+//             out.push("ERR unknown error");
+//         }
+//     }
+// }
+//
+// if (out.length > 0) {
+//     process.stdout.write(out.join("\n") + "\n");
+// }
 
-for (const line of lines) {
-    if (line === "") continue;
+function decodeString(input: string): string {
 
-    try {
-        for (const [k, v] of tokenize(line)) {
-            if (k === "EOF") {
-                out.push(k);
-            } else {
-                out.push(`${k} ${v}`);
-            }
-        }
-    } catch (e) {
-        if (e instanceof Error) {
-            out.push(`ERR ${e.message}`);
-        } else {
-            out.push("ERR unknown error");
-        }
+    if (!(input.length > 1 || (input.startsWith('"') || input.endsWith('"')))) {
+        return "ERR"
     }
+
+    let i: number = 1;
+    const response: string[] = [];
+
+    while (i < input.length && input[i] !== '"') {
+        if (input[i] === "\\") {
+
+            if (i + 1 >= input.length - 1) {
+                return "ERR";
+            }
+            const next = input[i + 1];
+
+            if (next === '"' || next === "\\"
+            ) {
+                response.push(next);
+                i += 2;
+                continue;
+            }
+
+            if (next === 'n') {
+                response.push("\n");
+                i += 2;
+                continue;
+            }
+
+            if (next === 't') {
+                response.push("\t");
+                i += 2;
+                continue;
+            }
+
+            if (next === "u") {
+                if (i + 5 >= input.length - 1) {
+                    return "ERR";
+                }
+
+                const hexStr: string = input.slice(i + 2, i + 6);
+                if (!/^[0-9a-fA-F]{4}$/.test(hexStr)) {
+                    return "ERR";
+                }
+                let hex: number = parseInt(hexStr, 16);
+
+                if (i + 6 < input.length - 1 && input[i + 6] === '\\' && input[i + 7] === 'u') {
+                    if (i + 11 >= input.length - 1) {
+                        return "ERR"
+                    }
+
+                    const hexStr2: string = input.slice(i + 8, i + 12);
+                    if (!/^[0-9a-fA-F]{4}$/.test(hexStr2)) {
+                        return "ERR";
+                    }
+
+                    hex = 0x10000 + ((hex - 0xD800) << 10) + parseInt(hexStr2, 16) - 0xDC00;
+                    response.push(String.fromCharCode(hex));
+                    i += 12;
+                    continue;
+                }
+
+                response.push(String.fromCharCode(hex));
+                i += 6;
+                continue;
+            }
+
+            return "ERR";
+
+        }
+        response.push(input[i]);
+        i++;
+    }
+
+    return response.join("");
 }
 
-if (out.length > 0) {
-    process.stdout.write(out.join("\n") + "\n");
+for (const line of lines) {
+    if (!line) continue;
+    console.log(decodeString(line));
 }
