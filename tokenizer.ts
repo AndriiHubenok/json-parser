@@ -255,7 +255,19 @@ function parseValue(src: string): string {
     return `ERR not a JSON literal: '${src}'`;
 }
 
+type validateNumberResult = "OK" | "ERR invalid number";
+
+function validateNumber(src: string): validateNumberResult {
+
+    let match = src.match("^-?(0|[1-9][0-9]*)(\.[0-9]+)?([eE][+-]?[0-9]+)?$");
+    if (match) {
+        return "OK";
+    }
+
+    return "ERR invalid number";
+}
+
 for (const line of lines) {
     if (!line) continue;
-    console.log(parseValue(line));
+    console.log(validateNumber(line));
 }
