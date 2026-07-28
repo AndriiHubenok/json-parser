@@ -1,4 +1,5 @@
 import { parseValue } from "./value";
+import {type} from "node:os";
 
 export function parseArray(src: string): string {
     src = src.trim();
@@ -13,14 +14,45 @@ export function parseArray(src: string): string {
         return "[]";
     }
 
+    const elements: string[] | string = validateArray(inner);
+
+    if (typeof elements === "string" && elements.startsWith("ERR")) {
+        return elements;
+    }
+
+    const parsedElements: string[] = [];
+    for (const el of elements) {
+        let parsed: string;
+
+        if (el.startsWith('[')) {
+            parsed = parseArray(el);
+        } else {
+            parsed = parseValue(el);
+        }
+
+        if (parsed.startsWith("ERR")) {
+            return parsed;
+        }
+
+        parsedElements.push(parsed);
+    }
+
+    return `[${parsedElements.join(", ")}]`;
+}
+
+export function validateArray(inner: string): string[] | string {
     const elements: string[] = [];
     let current = "";
     let depth = 0;
     let inString = false;
     let escapeNext = false;
 
-    for (let i = 0; i < inner.length; i++) {
-        const c = inner[i];
+    for (const element of inner) {
+        if(depth > 4) {
+            return "ERR depth exceeded"
+        }
+
+        const c = element;
 
         if (inString) {
             if (escapeNext) {
@@ -73,22 +105,5 @@ export function parseArray(src: string): string {
     }
     elements.push(lastElement);
 
-    const parsedElements: string[] = [];
-    for (const el of elements) {
-        let parsed: string;
-
-        if (el.startsWith('[')) {
-            parsed = parseArray(el);
-        } else {
-            parsed = parseValue(el);
-        }
-
-        if (parsed.startsWith("ERR")) {
-            return parsed;
-        }
-
-        parsedElements.push(parsed);
-    }
-
-    return `[${parsedElements.join(", ")}]`;
+    return elements;
 }

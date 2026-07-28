@@ -138,5 +138,11 @@ function tokenize(src: string): Token[] {
 
 for (const line of lines) {
     if (!line) continue;
-    console.log(parseJsonObject(line));
+    if (line.startsWith('[')) {
+        console.log(parseArray(line));
+    } else if (line.startsWith('{')) {
+        console.log(parseJsonObject(line));
+    } else {
+        console.log(value.parseValue(line));
+    }
 }

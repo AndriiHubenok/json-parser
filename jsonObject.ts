@@ -15,14 +15,69 @@ export function parseJsonObject(src: string): string {
         return "{}";
     }
 
+    const elements: string | string[] = validateJsonObject(inner);
+
+    if (typeof elements === "string" && elements.startsWith("ERR")) {
+        return elements;
+    }
+
+    const parsedElements: string[] = [];
+    let keyValue: string = "";
+    for (let i = 0; i < elements.length; i++) {
+        const el = elements[i];
+        let parsed: string;
+
+        if (i % 2 === 0) {
+            const key: string = parseValue(el);
+
+            if (key.startsWith("'") && key.endsWith("'")) {
+                keyValue += key + ": ";
+                continue;
+
+            } else {
+                parsed =  "ERR object key must be a string"
+            }
+
+        } else {
+            if (el.startsWith('[')) {
+                parsed = parseArray(el);
+            } else if (el.startsWith('{')) {
+                parsed = parseJsonObject(el);
+            } else {
+                parsed = parseValue(el);
+            }
+            keyValue += parsed;
+        }
+
+        if (parsed.startsWith("ERR")) {
+            return parsed;
+        }
+
+        if (i % 2 === 1) {
+            parsedElements.push(keyValue);
+            keyValue = "";
+        }
+    }
+
+    return `{${sortKeys(parsedElements).join(", ")}}`;
+}
+
+function sortKeys(elements: string[]): string[] {
+    return elements.sort((a, b) => a.localeCompare(b));
+}
+
+function validateJsonObject(inner: string): string | string[] {
     const elements: string[] = [];
     let current = "";
     let depth = 0;
     let inString = false;
     let escapeNext = false;
 
-    for (let i = 0; i < inner.length; i++) {
-        const c = inner[i];
+    for (const element of inner) {
+        if (depth > 4) {
+            return "ERR depth exceeded"
+        }
+        const c = element;
 
         if (inString) {
             if (escapeNext) {
@@ -75,47 +130,5 @@ export function parseJsonObject(src: string): string {
     }
     elements.push(lastElement);
 
-    const parsedElements: string[] = [];
-    let keyValue: string = "";
-    for (let i = 0; i < elements.length; i++) {
-        const el = elements[i];
-        let parsed: string;
-
-        if (i % 2 === 0) {
-            const key: string = parseValue(el);
-
-            if (key.startsWith("'") && key.endsWith("'")) {
-                keyValue += key + ": ";
-                continue;
-
-            } else {
-                parsed =  "ERR object key must be a string"
-            }
-
-        } else {
-            if (el.startsWith('[')) {
-                parsed = parseArray(el);
-            } else if (el.startsWith('{')) {
-                parsed = parseJsonObject(el);
-            } else {
-                parsed = parseValue(el);
-            }
-            keyValue += parsed;
-        }
-
-        if (parsed.startsWith("ERR")) {
-            return parsed;
-        }
-
-        if (i % 2 === 1) {
-            parsedElements.push(keyValue);
-            keyValue = "";
-        }
-    }
-
-    return `{${sortKeys(parsedElements).join(", ")}}`;
-}
-
-function sortKeys(elements: string[]): string[] {
-    return elements.sort((a, b) => a.localeCompare(b));
+    return elements;
 }
