@@ -3,6 +3,7 @@ import * as value from "./value";
 import { parseArray } from "./array";
 import { decodeString } from "./stringDecoder";
 import {parseJsonObject} from "./jsonObject";
+import {parseValue} from "./value";
 
 type TokenKind =
     | "PUNCT"
@@ -15,7 +16,36 @@ type TokenKind =
 
 type Token = [TokenKind, string];
 
-const lines: string[] = fs.readFileSync(0, "utf8").split(/\r?\n/);
+const lines: string = fs.readFileSync(0, "utf8");
+
+const objects: string[] = lines.split("\n---\n");
+
+for (const line of objects) {
+    if (!line) continue;
+
+    if (line.startsWith("[")) {
+        const output: string = parseArray(line);
+        if (output.startsWith("ERR")) {
+            console.log(output)
+        } else {
+            console.log("OK")
+        }
+    } else if (line.startsWith("{")) {
+        const output: string = parseJsonObject(line);
+        if (output.startsWith("ERR")) {
+            console.log(output)
+        } else {
+            console.log("OK")
+        }
+    } else {
+        const output: string = parseValue(line);
+        if (output.startsWith("ERR")) {
+            console.log(output)
+        } else {
+            console.log("OK")
+        }
+    }
+}
 
 function tokenize(src: string): Token[] {
     const tokens: Token[] = [];
@@ -135,14 +165,3 @@ function tokenize(src: string): Token[] {
 // if (out.length > 0) {
 //     process.stdout.write(out.join("\n") + "\n");
 // }
-
-for (const line of lines) {
-    if (!line) continue;
-    if (line.startsWith('[')) {
-        console.log(parseArray(line));
-    } else if (line.startsWith('{')) {
-        console.log(parseJsonObject(line));
-    } else {
-        console.log(value.parseValue(line));
-    }
-}
