@@ -67,3 +67,83 @@ export function validateNumber(src: string): validateNumberResult {
 
     return "ERR invalid number";
 }
+
+export function serializeValue(src: string): string {
+
+    if (src === "null" || src === "true" || src === "false") {
+        return src;
+    }
+
+    if (/^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?$/.test(src)) {
+        return src;
+    }
+
+    if (src.startsWith("s:")) {
+        return quotingString(src.slice(2));
+    }
+
+    if (src.startsWith("a:")) {
+        const inner = src.slice(2);
+        if (inner === "") return "[]";
+
+        const elements: string[] = inner.split(',');
+        const response: string[] = [];
+        for (const el of elements) {
+            response.push(serializeValue(el));
+        }
+        return `[${response.join(",")}]`;
+    }
+
+    if (src.startsWith("o:")) {
+        const inner = src.slice(2);
+        if (inner === "") return "{}";
+
+        const elements: string[] = inner.split(',');
+        const response: string[] = [];
+        for (const el of elements) {
+            const eqIndex = el.indexOf('=');
+            if (eqIndex !== -1) {
+                const key = el.slice(0, eqIndex);
+                const value = el.slice(eqIndex + 1);
+
+                response.push(`${quotingString(key)}:${quotingString(value)}`);
+            }
+        }
+
+        return `{${response.sort((a, b) => a.localeCompare(b)).join(",")}}`;
+    }
+
+    return quotingString(src);
+}
+
+function quotingString(src: string): string {
+    const response: string[] = ['"'];
+
+    for (const c of src) {
+        if (c === '"') {
+            response.push('\\"');
+        } else if (c === '\\') {
+            response.push('\\\\');
+        } else if (c === '\n') {
+            response.push('\\n');
+        } else if (c === '\r') {
+            response.push('\\r');
+        } else if (c === '\t') {
+            response.push('\\t');
+        } else if (c === '\b') {
+            response.push('\\b');
+        } else if (c === '\f') {
+            response.push('\\f');
+        } else {
+            const cp = c.codePointAt(0);
+            if (cp !== undefined && cp < 0x20) {
+                response.push(`\\u${cp.toString(16).padStart(4, '0')}`);
+            } else {
+                response.push(c);
+            }
+        }
+    }
+
+    response.push('"');
+    return response.join('');
+}

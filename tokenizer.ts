@@ -3,7 +3,7 @@ import * as value from "./value";
 import { parseArray } from "./array";
 import { decodeString } from "./stringDecoder";
 import {parseJsonObject} from "./jsonObject";
-import {parseValue} from "./value";
+import {parseValue, serializeValue} from "./value";
 
 type TokenKind =
     | "PUNCT"
@@ -22,29 +22,7 @@ const objects: string[] = lines.split("\n---\n");
 
 for (const line of objects) {
     if (!line) continue;
-
-    if (line.startsWith("[")) {
-        const output: string = parseArray(line);
-        if (output.startsWith("ERR")) {
-            console.log(output)
-        } else {
-            console.log("OK")
-        }
-    } else if (line.startsWith("{")) {
-        const output: string = parseJsonObject(line);
-        if (output.startsWith("ERR")) {
-            console.log(output)
-        } else {
-            console.log("OK")
-        }
-    } else {
-        const output: string = parseValue(line);
-        if (output.startsWith("ERR")) {
-            console.log(output)
-        } else {
-            console.log("OK")
-        }
-    }
+    console.log(serializeValue(line));
 }
 
 function tokenize(src: string): Token[] {
