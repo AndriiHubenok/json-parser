@@ -34,7 +34,7 @@ export function parseJsonObject(src: string, l?: number, c?: number): string {
             const key: string = parseValue(el);
 
             if (key.startsWith('"') && key.endsWith('"')) {
-                keyValue += key + ": ";
+                keyValue += key + ":";
                 continue;
 
             } else {
@@ -63,7 +63,7 @@ export function parseJsonObject(src: string, l?: number, c?: number): string {
         }
     }
 
-    return `{${sortKeys(parsedElements).join(", ")}}`;
+    return `{${sortKeys(parsedElements).join(",")}}`;
 }
 
 function sortKeys(elements: string[]): string[] {

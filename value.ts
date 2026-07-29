@@ -71,12 +71,16 @@ export function validateNumber(src: string): validateNumberResult {
 export function serializeValue(src: string): string {
 
     src = src.trim();
-    if (src === "None") {
+    if (src === "null" || src === "None") {
         return "null";
     }
 
-    if (src === "null" || src === "true" || src === "false") {
-        return src;
+    if (src === "false" || src === "False") {
+        return "false";
+    }
+
+    if (src === "true" || src === "True") {
+        return "true";
     }
 
     if (/^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?$/.test(src)) {

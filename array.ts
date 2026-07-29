@@ -1,5 +1,6 @@
 import { parseValue } from "./value";
 import {type} from "node:os";
+import {parseJsonObject} from "./jsonObject";
 
 export function parseArray(src: string, l?: number, c?: number): string {
     src = src.trim();
@@ -29,6 +30,8 @@ export function parseArray(src: string, l?: number, c?: number): string {
 
         if (el.startsWith('[')) {
             parsed = parseArray(el, l, c);
+        } else if (el.startsWith('{')) {
+            parsed = parseJsonObject(el, l, c);
         } else {
             parsed = parseValue(el);
         }
@@ -37,11 +40,11 @@ export function parseArray(src: string, l?: number, c?: number): string {
             return parsed;
         }
 
-        c += parsed.length;
+        //c += parsed.length;
         parsedElements.push(parsed);
     }
 
-    return `[${parsedElements.join(", ")}]`;
+    return `[${parsedElements.join(",")}]`;
 }
 
 export function validateArray(inner: string, l?: number, c?: number): string[] | string {
