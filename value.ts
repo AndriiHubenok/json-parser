@@ -17,7 +17,7 @@ export function parseValue(src: string, l?: number, c?: number): string {
             if (end < src.length - 1) {
                 return `ERR line=${line} col=${col + end + 2} trailing data`;
             }
-            return "'" + src.slice(1, -1) + "'";
+            return '"' + src.slice(1, -1) + '"';
         }
     }
 
@@ -70,6 +70,11 @@ export function validateNumber(src: string): validateNumberResult {
 
 export function serializeValue(src: string): string {
 
+    src = src.trim();
+    if (src === "None") {
+        return "null";
+    }
+
     if (src === "null" || src === "true" || src === "false") {
         return src;
     }
@@ -78,12 +83,13 @@ export function serializeValue(src: string): string {
         return src;
     }
 
-    if (src.startsWith("s:")) {
-        return quotingString(src.slice(2));
+    if (src.startsWith('"') && src.endsWith('"')) {
+        //return quotingString(src.slice(1, -1));
+        return src;
     }
 
-    if (src.startsWith("a:")) {
-        const inner = src.slice(2);
+    if (src.startsWith("[")) {
+        const inner = src.slice(1, -1);
         if (inner === "") return "[]";
 
         const elements: string[] = inner.split(',');
@@ -94,19 +100,19 @@ export function serializeValue(src: string): string {
         return `[${response.join(",")}]`;
     }
 
-    if (src.startsWith("o:")) {
-        const inner = src.slice(2);
+    if (src.startsWith("{")) {
+        const inner = src.slice(1, -1);
         if (inner === "") return "{}";
 
         const elements: string[] = inner.split(',');
         const response: string[] = [];
         for (const el of elements) {
-            const eqIndex = el.indexOf('=');
+            const eqIndex = el.indexOf(':');
             if (eqIndex !== -1) {
                 const key = el.slice(0, eqIndex);
                 const value = el.slice(eqIndex + 1);
 
-                response.push(`${quotingString(key)}:${quotingString(value)}`);
+                response.push(`${(key.trim())}:${(value.trim())}`);
             }
         }
 

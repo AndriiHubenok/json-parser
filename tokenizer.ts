@@ -16,17 +16,26 @@ type TokenKind =
 
 type Token = [TokenKind, string];
 
-const lines: string = fs.readFileSync(0, "utf8");
+const lines = fs.readFileSync(0, "utf8").split("\n");
 
-const objects: string[] = lines.split("\n---\n");
-
-for (const line of objects) {
+for (const line of lines) {
     if (!line) continue;
-    console.log(serializeValue(line));
+
+    let result: string = "";
+
+    if (line.startsWith("{")) {
+        result = parseJsonObject(line);
+    } else if (line.startsWith("[")) {
+        result = parseArray(line);
+    } else {
+        result = parseValue(line);
+    }
+
+    console.log(serializeValue(result));
 }
 
-function tokenize(src: string): Token[] {
-    const tokens: Token[] = [];
+function tokenize(src: string): string[] {
+    const tokens: string[] = [];
     let i = 0;
 
     while (i < src.length) {
@@ -38,7 +47,7 @@ function tokenize(src: string): Token[] {
         }
 
         if ("{}[],:".includes(c)) {
-            tokens.push(["PUNCT", c]);
+            tokens.push("p: " + c);
             i++;
             continue;
         }
@@ -66,7 +75,7 @@ function tokenize(src: string): Token[] {
                 j++;
             }
 
-            tokens.push(["STRING", response.join("")]);
+            tokens.push("s: " + response.join(""));
             i = j + 1;
             continue;
         }
@@ -88,25 +97,25 @@ function tokenize(src: string): Token[] {
                 while (j < src.length && src[j] >= "0" && src[j] <= "9") j++;
             }
 
-            tokens.push(["NUMBER", src.slice(i, j)]);
+            tokens.push(src.slice(i, j));
             i = j;
             continue;
         }
 
         if (src.startsWith("true", i)) {
-            tokens.push(["TRUE", "true"]);
+            tokens.push("true");
             i += 4;
             continue;
         }
 
         if (src.startsWith("false", i)) {
-            tokens.push(["FALSE", "false"]);
+            tokens.push("false");
             i += 5;
             continue;
         }
 
         if (src.startsWith("null", i)) {
-            tokens.push(["NULL", "null"]);
+            tokens.push("null");
             i += 4;
             continue;
         }
@@ -114,7 +123,7 @@ function tokenize(src: string): Token[] {
         throw new Error(`unexpected character ${c} at position ${i}`);
     }
 
-    tokens.push(["EOF", ""]);
+    tokens.push("EOF");
     return tokens;
 }
 

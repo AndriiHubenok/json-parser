@@ -33,7 +33,7 @@ export function parseJsonObject(src: string, l?: number, c?: number): string {
         if (i % 2 === 0) {
             const key: string = parseValue(el);
 
-            if (key.startsWith("'") && key.endsWith("'")) {
+            if (key.startsWith('"') && key.endsWith('"')) {
                 keyValue += key + ": ";
                 continue;
 
