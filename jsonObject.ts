@@ -1,5 +1,4 @@
 import {parseValue} from "./value";
-import {decodeString} from "./stringDecoder";
 import {parseArray} from "./array";
 
 export function parseJsonObject(src: string, l?: number, c?: number): string {

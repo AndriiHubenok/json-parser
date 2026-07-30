@@ -1,5 +1,4 @@
 import { parseValue } from "./value";
-import {type} from "node:os";
 import {parseJsonObject} from "./jsonObject";
 
 export function parseArray(src: string, l?: number, c?: number): string {
@@ -40,7 +39,7 @@ export function parseArray(src: string, l?: number, c?: number): string {
             return parsed;
         }
 
-        //c += parsed.length;
+        c += parsed.length;
         parsedElements.push(parsed);
     }
 

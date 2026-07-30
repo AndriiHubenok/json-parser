@@ -1,3 +1,5 @@
+import {decodeString} from "./stringDecoder";
+
 export function parseValue(src: string, l?: number, c?: number): string {
     let line: number = l || 1;
     let col: number = c || 0;
@@ -23,17 +25,17 @@ export function parseValue(src: string, l?: number, c?: number): string {
 
     if (src.startsWith("true")) {
         if (src.length > 4) return `ERR line=${line} col=${col + 5} trailing data`;
-        return "True";
+        return "true";
     }
 
     if (src.startsWith("false")) {
         if (src.length > 5) return `ERR line=${line} col=${col + 6} trailing data`;
-        return "False";
+        return "false";
     }
 
     if (src.startsWith("null")) {
         if (src.length > 4) return `ERR line=${line} col=${col + 5} trailing data`;
-        return "None";
+        return "null";
     }
 
     const match = src.match(/^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?/);
@@ -56,18 +58,6 @@ export function parseValue(src: string, l?: number, c?: number): string {
     return `ERR not a JSON literal: '${src}'`;
 }
 
-type validateNumberResult = "OK" | "ERR invalid number";
-
-export function validateNumber(src: string): validateNumberResult {
-
-    let match = src.match("^-?(0|[1-9][0-9]*)(\.[0-9]+)?([eE][+-]?[0-9]+)?$");
-    if (match) {
-        return "OK";
-    }
-
-    return "ERR invalid number";
-}
-
 export function serializeValue(src: string): string {
 
     src = src.trim();
@@ -88,15 +78,19 @@ export function serializeValue(src: string): string {
     }
 
     if (src.startsWith('"') && src.endsWith('"')) {
-        //return quotingString(src.slice(1, -1));
-        return src;
+        return `"${decodeString(src)}"`;
     }
 
     if (src.startsWith("[")) {
         const inner = src.slice(1, -1);
         if (inner === "") return "[]";
 
-        const elements: string[] = inner.split(',');
+        const splitResult: string | string[] = splitObject(inner);
+        if (typeof splitResult === "string" && splitResult.startsWith("ERR")) {
+            return splitResult;
+        }
+
+        const elements = splitResult;
         const response: string[] = [];
         for (const el of elements) {
             response.push(serializeValue(el));
@@ -108,7 +102,12 @@ export function serializeValue(src: string): string {
         const inner = src.slice(1, -1);
         if (inner === "") return "{}";
 
-        const elements: string[] = inner.split(',');
+        const splitResult: string | string[] = splitObject(inner);
+        if (typeof splitResult === "string" && splitResult.startsWith("ERR")) {
+            return splitResult;
+        }
+
+        const elements = splitResult;
         const response: string[] = [];
         for (const el of elements) {
             const eqIndex = el.indexOf(':');
@@ -156,4 +155,72 @@ function quotingString(src: string): string {
 
     response.push('"');
     return response.join('');
+}
+
+function splitObject(src: string): string[] | string {
+    const elements: string[] = [];
+    let current = "";
+    let depth = 0;
+    let inString = false;
+    let escapeNext = false;
+
+    for (const element of src) {
+        if(depth > 4) {
+            return "ERR"
+        }
+
+        const c = element;
+
+        if (inString) {
+            if (escapeNext) {
+                escapeNext = false;
+            } else if (c === '\\') {
+                escapeNext = true;
+            } else if (c === '"') {
+                inString = false;
+            }
+            current += c;
+            continue;
+        }
+
+        if (c === '"') {
+            inString = true;
+            current += c;
+            continue;
+        }
+
+        if (c === '[' || c === '{') {
+            depth++;
+            current += c;
+            continue;
+        }
+
+        if (c === ']' || c === '}') {
+            depth--;
+            current += c;
+            continue;
+        }
+
+        if (c === ',' && depth === 0) {
+            if (current.trim() === "") {
+                return "ERR";
+            }
+            elements.push(current.trim());
+            current = "";
+            continue;
+        }
+
+        current += c;
+    }
+
+    if (depth !== 0) return `ERR`;
+    if (inString) return `ERR`;
+
+    const lastElement = current.trim();
+    if (lastElement === "") {
+        return `ERR`;
+    }
+    elements.push(lastElement);
+
+    return elements;
 }
